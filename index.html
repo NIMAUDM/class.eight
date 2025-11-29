@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>لیست حضور پیشرفته</title>
 <style>
-body { font-family:tahoma; background:#f3f3f3; padding:10px; }
-.row { background:#fff; padding:8px; margin:6px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-button { padding:6px 12px; border-radius:6px; cursor:pointer; margin:2px; }
+body { font-family:tahoma; background:#f3f3f3; padding:20px; }
+.row { background:#fff; padding:10px; margin:8px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+.options button { padding:6px 12px; border:0; border-radius:6px; cursor:pointer; }
 .h { background:#4caf50; color:#fff; }
 .gh { background:#f44336; color:#fff; }
-.disabled { opacity:0.5; pointer-events:none; }
 #role-select, #login-form, #register-form, #admin-login-form, #notification { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; }
-#main, #admin-panel { display:none; padding:15px; }
-.bottom-nav { position:fixed; bottom:10px; width:100%; display:flex; justify-content:center; gap:15px; }
-input { margin:5px; padding:8px; border-radius:5px; border:1px solid #ccc; width:200px; max-width:90%; }
+#main, #admin-panel { display:none; padding:20px; }
+.bottom-nav { position:fixed; bottom:10px; width:100%; display:flex; justify-content:center; gap:20px; }
+.bottom-nav button { padding:10px 20px; border-radius:8px; cursor:pointer; }
+input, select { margin:5px; padding:8px; border-radius:5px; border:1px solid #ccc; }
 .error { color:red; }
 .spacer { height:50px; }
 </style>
@@ -26,41 +26,45 @@ input { margin:5px; padding:8px; border-radius:5px; border:1px solid #ccc; width
   <button onclick="chooseRole('admin')">ادمین</button>
 </div>
 
-<div id="login-form" style="display:none;">
+<div id="login-form">
   <h2 id="login-title"></h2>
-  <input type="text" id="username" placeholder="نام کاربری">
-  <input type="password" id="password" placeholder="رمز عبور">
+  <input type="text" id="username" placeholder="نام کاربری" />
+  <input type="password" id="password" placeholder="رمز عبور" />
   <button onclick="login()">ورود</button>
-  <button onclick="showRegister()">ثبت نام</button>
+  <button onclick="registerForm()">ثبت نام</button>
   <p class="error" id="login-error"></p>
 </div>
 
 <div id="register-form" style="display:none;">
   <h2>ثبت نام دانش‌آموز</h2>
-  <input type="text" id="reg-username" placeholder="نام کاربری">
-  <input type="password" id="reg-password" placeholder="رمز عبور">
-  <input type="password" id="reg-password2" placeholder="تکرار رمز عبور">
+  <input type="text" id="reg-username" placeholder="نام کاربری" />
+  <input type="password" id="reg-password" placeholder="رمز عبور" />
+  <input type="password" id="reg-password2" placeholder="تکرار رمز عبور" />
   <button onclick="registerStudent()">ثبت نام</button>
   <p class="error" id="reg-error"></p>
 </div>
 
 <div id="admin-login-form" style="display:none;">
   <h2>ورود ادمین</h2>
-  <input type="text" id="admin-username" placeholder="نام کاربری">
-  <input type="password" id="admin-password" placeholder="رمز عبور">
+  <input type="text" id="admin-username" placeholder="نام کاربری" />
+  <input type="password" id="admin-password" placeholder="رمز عبور" />
   <button onclick="adminLogin()">ورود</button>
   <p class="error" id="admin-login-error"></p>
 </div>
 
 <div id="main">
-  <h2>تاریخ امروز: <span id="current-date"></span></h2>
+  <h2>تقویم حضور: <span id="current-date"></span></h2>
+  <select id="date-select" onchange="updateAttendance()"></select>
   <div id="attendance-list"></div>
+  <div class="spacer"></div>
 </div>
 
 <div id="admin-panel">
   <h2>پنل ادمین</h2>
+  <select id="admin-date-select" onchange="renderAdminAttendance()"></select>
   <div id="admin-attendance-list"></div>
-  <button onclick="submitAttendance()">ثبت حضور</button>
+  <button id="submit-btn" onclick="submitAttendance()">ثبت حضور</button>
+  <div class="spacer"></div>
 </div>
 
 <div id="notification" style="display:none; position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px #000;">
@@ -74,141 +78,177 @@ input { margin:5px; padding:8px; border-radius:5px; border:1px solid #ccc; width
 </div>
 
 <script>
-// ----- داده ها -----
-let role='';
-const adminCred = {username:'NIMAUDM', password:'n13901390'};
-let students=["سپهر اورنگی","علی اصغر اسدی","یاسین برومندی","سپهر جعفرلو","علی اکبر جوکار","نیما حسنی","علی اصغر خدایاری","حامد خواجه","محمدحسین دانشخو","امیر طاها دهقانی","عباس دهقانی","محمد طاها دهقانی","میلاد رضایی","پوریا زارعی","محمد رضا سبیعی","امیرعباس سوری","آرشام شهپری","احمدرضا طاهری","عباس طاهری","سامان عباسی","امیرحسین علمدار","محمد غرقی","حمیدرضا کرمی","محمدرضا کریمی","امیرعباس محمودنیا","امیرمحمد نصیری","علی نصیری"];
+// لیست دانش آموزان
+let students = ["سپهر اورنگی","علی اصغر اسدی","یاسین برومندی","سپهر جعفرلو","علی اکبر جوکار",
+"نیما حسنی","علی اصغر خدایاری","حامد خواجه","محمدحسین دانشخو","امیر طاها دهقانی",
+"عباس دهقانی","محمد طاها دهقانی","میلاد رضایی","پوریا زارعی","محمد رضا سبیعی",
+"امیرعباس سوری","آرشام شهپری","احمدرضا طاهری","عباس طاهری","سامان عباسی",
+"امیرحسین علمدار","محمد غرقی","حمیدرضا کرمی","محمدرضا کریمی","امیرعباس محمودنیا",
+"امیرمحمد نصیری","علی نصیری"];
 
-let users=JSON.parse(localStorage.getItem('users')||'[]');
-let attendanceData=JSON.parse(localStorage.getItem('attendanceData')||'{}'); // { "YYYY-MM-DD": {"student":"ح"} }
-let currentUser=localStorage.getItem('currentUser')||null;
-let isAdmin=localStorage.getItem('isAdmin')==='true';
-let today=new Date().toLocaleDateString('fa-IR');
-document.getElementById("current-date").innerText=today;
+let adminCred = { username: "NIMAUDM", password: "n13901390" };
 
-// ----- انتخاب نقش -----
+// ذخیره‌سازی کاربران و حضور
+let users = JSON.parse(localStorage.getItem("users")||"[]");
+let attendanceData = JSON.parse(localStorage.getItem("attendanceData")||"{}");
+
+// ورود خودکار
+let loggedUser = localStorage.getItem("loggedUser");
+let isAdmin = localStorage.getItem("isAdmin") === "true";
+
+window.addEventListener("load",()=>{
+  if(loggedUser){
+    if(isAdmin) showAdminPanel();
+    else showMain();
+  } else populateDateSelects();
+});
+
+// انتخاب نقش
+let role="";
 function chooseRole(r){
   role=r;
-  document.getElementById('role-select').style.display='none';
-  document.getElementById('login-form').style.display='flex';
-  document.getElementById('login-title').innerText=r==='admin'?'ورود ادمین':'ورود دانش‌آموز';
+  document.getElementById("role-select").style.display="none";
+  document.getElementById("login-form").style.display="flex";
+  document.getElementById("login-title").innerText = r==="admin"?"ورود ادمین":"ورود دانش‌آموز";
 }
 
-// ----- ثبت نام -----
-function showRegister(){
-  document.getElementById('login-form').style.display='none';
-  document.getElementById('register-form').style.display='flex';
+// فرم ثبت نام
+function registerForm(){
+  if(role==="admin") return;
+  document.getElementById("login-form").style.display="none";
+  document.getElementById("register-form").style.display="flex";
 }
 
+// ثبت نام دانش آموز
 function registerStudent(){
-  let u=document.getElementById('reg-username').value.trim();
-  let p=document.getElementById('reg-password').value.trim();
-  let p2=document.getElementById('reg-password2').value.trim();
-  let err=document.getElementById('reg-error'); err.innerText='';
-
-  if(!u||!p){ err.innerText='تمام فیلدها پر شود'; return;}
-  if(p!==p2){ err.innerText='رمز یکسان نیست'; return;}
-  if(users.find(x=>x.username===u)){ err.innerText='این نام کاربری قبلا ثبت شده'; return;}
-
+  let u = document.getElementById("reg-username").value.trim();
+  let p = document.getElementById("reg-password").value.trim();
+  let p2 = document.getElementById("reg-password2").value.trim();
+  let err = document.getElementById("reg-error");
+  err.innerText="";
+  if(!u||!p){err.innerText="تمام فیلدها پر شود"; return;}
+  if(p!==p2){err.innerText="رمز یکسان نیست"; return;}
+  if(users.find(x=>x.username===u)){err.innerText="این نام کاربری قبلاً ثبت شده"; return;}
   users.push({username:u,password:p});
-  localStorage.setItem('users',JSON.stringify(users));
-  localStorage.setItem('currentUser',u);
-  localStorage.setItem('isAdmin','false');
+  localStorage.setItem("users",JSON.stringify(users));
+  localStorage.setItem("loggedUser",u);
+  localStorage.setItem("isAdmin","false");
   location.reload();
 }
 
-// ----- ورود -----
+// ورود دانش آموز
 function login(){
-  let u=document.getElementById('username').value.trim();
-  let p=document.getElementById('password').value.trim();
-  let err=document.getElementById('login-error'); err.innerText='';
-
-  if(role==='admin'){ document.getElementById('login-form').style.display='none'; document.getElementById('admin-login-form').style.display='flex'; return; }
-
-  let user=users.find(x=>x.username===u && x.password===p);
-  if(!user){ err.innerText='نام کاربری یا رمز اشتباه است'; return;}
-
-  localStorage.setItem('currentUser',u);
-  localStorage.setItem('isAdmin','false');
+  let u=document.getElementById("username").value.trim();
+  let p=document.getElementById("password").value.trim();
+  let err=document.getElementById("login-error");
+  err.innerText="";
+  if(role==="admin"){
+    document.getElementById("login-form").style.display="none";
+    document.getElementById("admin-login-form").style.display="flex";
+    return;
+  }
+  let findUser=users.find(x=>x.username===u && x.password===p);
+  if(!findUser){err.innerText="نام کاربری یا رمز اشتباه است"; return;}
+  localStorage.setItem("loggedUser",u);
+  localStorage.setItem("isAdmin","false");
   showMain();
 }
 
-// ----- ورود ادمین -----
+// ورود ادمین
 function adminLogin(){
-  let u=document.getElementById('admin-username').value;
-  let p=document.getElementById('admin-password').value;
-  let err=document.getElementById('admin-login-error'); err.innerText='';
-
-  if(u!==adminCred.username||p!==adminCred.password){ err.innerText='ادمین فقط با اطلاعات اصلی وارد می‌شود'; return;}
-  localStorage.setItem('currentUser',u);
-  localStorage.setItem('isAdmin','true');
-  isAdmin=true;
+  let u=document.getElementById("admin-username").value;
+  let p=document.getElementById("admin-password").value;
+  let err=document.getElementById("admin-login-error");
+  err.innerText="";
+  if(u!==adminCred.username||p!==adminCred.password){err.innerText="ادمین فقط با اطلاعات اصلی وارد می‌شود"; return;}
+  localStorage.setItem("loggedUser",u);
+  localStorage.setItem("isAdmin","true");
   showAdminPanel();
 }
 
-// ----- نمایش صفحه اصلی -----
+// صفحه اصلی دانش آموز
 function showMain(){
-  document.getElementById('main').style.display='block';
-  document.getElementById('admin-panel').style.display='none';
-  document.getElementById('login-form').style.display='none';
-  document.getElementById('register-form').style.display='none';
-  document.getElementById('admin-login-form').style.display='none';
-
-  let div=document.getElementById('attendance-list');
-  div.innerHTML='';
-
-  let todayData=attendanceData[today]||{};
-  students.forEach(s=>{
-    let status=todayData[s]||'---';
-    div.innerHTML+=`<div class="row"><span>${s}</span><span>${status}</span></div>`;
-  });
+  document.getElementById("login-form").style.display="none";
+  document.getElementById("register-form").style.display="none";
+  document.getElementById("role-select").style.display="none";
+  document.getElementById("admin-login-form").style.display="none";
+  document.getElementById("main").style.display="block";
+  document.getElementById("admin-panel").style.display="none";
+  populateDateSelects();
+  updateAttendance();
 }
 
-// ----- پنل ادمین -----
+// صفحه ادمین
 function showAdmin(){
-  if(!currentUser) return;
-  document.getElementById('admin-login-form').style.display='flex';
+  if(!loggedUser) return;
+  document.getElementById("admin-login-form").style.display="flex";
 }
 
 function showAdminPanel(){
-  document.getElementById('main').style.display='none';
-  document.getElementById('admin-login-form').style.display='none';
-  document.getElementById('admin-panel').style.display='block';
+  document.getElementById("admin-login-form").style.display="none";
+  document.getElementById("main").style.display="none";
+  document.getElementById("admin-panel").style.display="block";
+  populateDateSelects();
+  renderAdminAttendance();
+}
 
-  let div=document.getElementById('admin-attendance-list');
-  div.innerHTML='';
-  let todayData=attendanceData[today]||{};
+// تقویم برای انتخاب روز
+function populateDateSelects(){
+  let dateSelect=document.getElementById("date-select");
+  let adminSelect=document.getElementById("admin-date-select");
+  let today=new Date();
+  for(let i=0;i<30;i++){
+    let d=new Date();
+    d.setDate(today.getDate()+i);
+    let str=d.toLocaleDateString("fa-IR");
+    let opt=document.createElement("option"); opt.value=str; opt.text=str; dateSelect.appendChild(opt);
+    let opt2=document.createElement("option"); opt2.value=str; opt2.text=str; adminSelect.appendChild(opt2);
+  }
+}
+
+// نمایش وضعیت دانش آموز
+function updateAttendance(){
+  let date=document.getElementById("date-select").value;
+  let listDiv=document.getElementById("attendance-list");
+  listDiv.innerHTML="";
   students.forEach(s=>{
-    let status=todayData[s]||'';
-    div.innerHTML+=`<div class="row"><span>${s}</span><span>
-      <button class="h ${status?'disabled':''}" onclick="mark('${s}','ح')">ح</button>
-      <button class="gh ${status?'disabled':''}" onclick="mark('${s}','غ')">غ</button>
-      </span></div>`;
+    let status=(attendanceData[date] && attendanceData[date][s])?attendanceData[date][s]:"---";
+    listDiv.innerHTML+=`<div class="row"><span>${s}</span><span>${status}</span></div>`;
   });
 }
 
-function mark(name,type){
-  if(!attendanceData[today]) attendanceData[today]={};
-  attendanceData[today][name]=type;
-  localStorage.setItem('attendanceData',JSON.stringify(attendanceData));
-  showAdminPanel();
+// نمایش وضعیت برای ادمین
+function renderAdminAttendance(){
+  let date=document.getElementById("admin-date-select").value;
+  let div=document.getElementById("admin-attendance-list");
+  div.innerHTML="";
+  students.forEach(s=>{
+    let val=(attendanceData[date]&&attendanceData[date][s])?attendanceData[date][s]:"";
+    div.innerHTML+=`<div class="row">
+      <span>${s}</span>
+      <span>
+        <button onclick="markAdmin('${s}','ح')" class="h" ${val==="ح"?"disabled":""}>ح</button>
+        <button onclick="markAdmin('${s}','غ')" class="gh" ${val==="غ"?"disabled":""}>غ</button>
+      </span>
+    </div>`;
+  });
 }
 
+// ثبت وضعیت توسط ادمین
+function markAdmin(student,type){
+  let date=document.getElementById("admin-date-select").value;
+  if(!attendanceData[date]) attendanceData[date]={};
+  attendanceData[date][student]=type;
+  localStorage.setItem("attendanceData",JSON.stringify(attendanceData));
+  renderAdminAttendance();
+}
+
+// دکمه ثبت نهایی ادمین
 function submitAttendance(){
-  document.getElementById('notification').style.display='flex';
+  showNotification();
 }
 
-function closeNotification(){
-  document.getElementById('notification').style.display='none';
-  showMain();
-}
+// نوتیفیکیشن
+function closeNotification(){ document.getElementById("notification").style.display="none"; updateAttendance(); }
 
-// ----- لاگین خودکار -----
-if(currentUser){
-  if(isAdmin) showAdminPanel();
-  else showMain();
-}
-</script>
-
-</body>
-</html>
+document.getElementById("current-date").innerText=new Date().toLocaleDateString("fa-IR");
