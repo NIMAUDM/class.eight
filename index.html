@@ -19,6 +19,7 @@
   .error { color:red; }
   .spacer { height:50px; }
 </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
@@ -141,8 +142,50 @@ function submitAttendance(){ if(!adminSelected) return; showNotification(); }
 function showNotification(){ document.getElementById('notification').style.display='flex'; }
 function closeNotification(){ document.getElementById('notification').style.display='none'; showMain(); }
 document.getElementById('current-date').innerText=new Date().toLocaleDateString('fa-IR');
+// persistent login system inserted
+let users = JSON.parse(localStorage.getItem('users') || '{}');
+let currentUser = localStorage.getItem('currentUser') || null;
+let isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+function registerStudent(u,p,p2){ if(p!==p2){alert('رمز مطابقت ندارد');return;} if(users[u]){alert('این نام کاربری قبلاً ثبت شده');return;} users[u]=p; localStorage.setItem('users',JSON.stringify(users)); localStorage.setItem('currentUser',u); localStorage.setItem('isAdmin',false); location.reload(); }
+function login(u,p){ if(users[u]&&users[u]===p){ localStorage.setItem('currentUser',u); localStorage.setItem('isAdmin',false); location.reload(); } else alert('ورود نامعتبر'); }
+function adminLogin(u,p){ if(u==='NIMAUDM'&&p==='n13901390'){ localStorage.setItem('currentUser',u); localStorage.setItem('isAdmin',true); location.reload(); } else alert('ادمین فقط با اطلاعات اصلی وارد می‌شود'); }
+window.addEventListener('load',()=>{ if(currentUser){ if(typeof showMainPage==='function') showMainPage(); } });
+/* ---------------- ذخیره کاربر بعد از ثبت‌نام ---------------- */
+function saveUser(username, password) {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    users.push({ username, password });
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+/* ---------------- چک کردن اگر قبلاً وارد شده ---------------- */
+function checkLogin() {
+    const loggedUser = localStorage.getItem("loggedUser");
+    if (loggedUser) {
+        // کاربر قبلاً لاگین بوده → بفرستش صفحه اصلی
+        window.location = "index.html";
+    }
+}
+
+/* ---------------- لاگین ---------------- */
+function login(username, password) {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const match = users.find(u => u.username === username && u.password === password);
+
+    if (match) {
+        localStorage.setItem("loggedUser", username);
+        window.location = "index.html"; // ارسال به صفحه اصلی
+        return true;
+    }
+    return false;
+}
+
+/* ---------------- لاگ‌اوت ---------------- */
+function logout() {
+    localStorage.removeItem("loggedUser");
+    location.reload();
+}
 </script>
 
 </body>
-
 </html>
